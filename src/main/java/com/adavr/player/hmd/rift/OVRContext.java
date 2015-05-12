@@ -54,8 +54,10 @@ import com.adavr.player.globjects.Framebuffer;
 import com.adavr.player.globjects.Texture;
 import com.adavr.player.hmd.HMDRenderContext;
 import com.adavr.player.context.SceneRenderContext;
+import com.adavr.player.hmd.HMDStatusListener;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
+import java.util.LinkedList;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFW;
@@ -87,6 +89,7 @@ public class OVRContext implements HMDRenderContext {
 	private final Framebuffer[] framebuffers = new Framebuffer[ovrEye_Count];
 
 	private boolean trackingEnabled = true;
+	private LinkedList<HMDStatusListener> listeners = new LinkedList<>();
 
 	public OVRContext(Hmd hmd, SceneRenderContext ctx) {
 		this.hmd = hmd;
@@ -107,6 +110,16 @@ public class OVRContext implements HMDRenderContext {
 		this.trackingEnabled = trackingEnabled;
 	}
 
+	@Override
+	public void addStatusListener(HMDStatusListener listener) {
+		listeners.add(listener);
+	}
+	
+	@Override
+	public void removeStatusListener(HMDStatusListener listener) {
+		listeners.remove(listener);
+	}
+	
 	@Override
 	public void resetCamera() {
 		hmd.recenterPose();
@@ -249,6 +262,9 @@ public class OVRContext implements HMDRenderContext {
 		}
 		viewModelMatrix = viewModelMatrix.translate(new Vector3f(0, OvrLibrary.OVR_DEFAULT_EYE_HEIGHT, 0));
 		ctx.updateMatrix(projectionMatrix, viewModelMatrix);
+		for (HMDStatusListener listener : listeners) {
+			listener.update(position, orientation, projectionMatrix);
+		}
 	}
 
 	public Vector3f toVector3f(OvrVector3f v) {
