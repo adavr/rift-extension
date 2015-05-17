@@ -40,7 +40,6 @@ import static com.oculusvr.capi.OvrLibrary.ovrEyeType.ovrEye_Left;
 import static com.oculusvr.capi.OvrLibrary.ovrEyeType.ovrEye_Right;
 import static com.oculusvr.capi.OvrLibrary.ovrTrackingCaps.ovrTrackingCap_MagYawCorrection;
 import static com.oculusvr.capi.OvrLibrary.ovrTrackingCaps.ovrTrackingCap_Orientation;
-import static com.oculusvr.capi.OvrLibrary.ovrTrackingCaps.ovrTrackingCap_Position;
 import com.oculusvr.capi.OvrMatrix4f;
 import com.oculusvr.capi.OvrQuaternionf;
 import com.oculusvr.capi.OvrRecti;
@@ -151,7 +150,7 @@ public class OVRContext implements HMDRenderContext {
 		eyeTextures[ovrEye_Left].ogl = new GLTextureData(new TextureHeader(renderTargetEyeSize, eyeRenderViewport[ovrEye_Left]));
 		eyeTextures[ovrEye_Right].ogl = new GLTextureData(new TextureHeader(renderTargetEyeSize, eyeRenderViewport[ovrEye_Right]));
 
-		if (hmd.configureTracking(ovrTrackingCap_Orientation | ovrTrackingCap_MagYawCorrection | ovrTrackingCap_Position, 0) == 0) {
+		if (hmd.configureTracking(ovrTrackingCap_Orientation | ovrTrackingCap_MagYawCorrection, 0) == 0) {
 			throw new IllegalStateException("Unable to start the sensor");
 		}
 
