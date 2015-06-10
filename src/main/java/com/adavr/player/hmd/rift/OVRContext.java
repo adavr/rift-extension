@@ -35,6 +35,7 @@ import com.oculusvr.capi.OvrLibrary;
 import static com.oculusvr.capi.OvrLibrary.ovrDistortionCaps.ovrDistortionCap_Chromatic;
 import static com.oculusvr.capi.OvrLibrary.ovrDistortionCaps.ovrDistortionCap_TimeWarp;
 import static com.oculusvr.capi.OvrLibrary.ovrDistortionCaps.ovrDistortionCap_Vignette;
+import static com.oculusvr.capi.OvrLibrary.ovrDistortionCaps.ovrDistortionCap_LinuxDevFullscreen;
 import static com.oculusvr.capi.OvrLibrary.ovrEyeType.ovrEye_Count;
 import static com.oculusvr.capi.OvrLibrary.ovrEyeType.ovrEye_Left;
 import static com.oculusvr.capi.OvrLibrary.ovrEyeType.ovrEye_Right;
@@ -58,6 +59,7 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.LinkedList;
 import org.lwjgl.BufferUtils;
+import org.lwjgl.LWJGLUtil;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWvidmode;
@@ -196,9 +198,20 @@ public class OVRContext implements HMDRenderContext {
 		initHMD();
 
 		RenderAPIConfig rc = new RenderAPIConfig();
-		rc.Header.BackBufferSize = hmd.Resolution;
+		OvrSizei resolution = hmd.Resolution;
+		if (LWJGLUtil.getPlatform() == LWJGLUtil.Platform.LINUX) {
+			rc.Header.BackBufferSize = new OvrSizei(resolution.h, resolution.w);
+		} else {
+			rc.Header.BackBufferSize = resolution;
+		}
 		rc.Header.Multisample = 1;
-		int distortionCaps = ovrDistortionCap_Chromatic | ovrDistortionCap_TimeWarp | ovrDistortionCap_Vignette;
+		int distortionCaps =
+				ovrDistortionCap_Chromatic |
+				ovrDistortionCap_TimeWarp |
+				ovrDistortionCap_Vignette;
+		if (LWJGLUtil.getPlatform() == LWJGLUtil.Platform.LINUX) {
+			distortionCaps |= ovrDistortionCap_LinuxDevFullscreen;
+		}
 		EyeRenderDesc eyeRenderDescs[] = hmd.configureRendering(rc, distortionCaps, fovPorts);
 		for (int eye = 0; eye < 2; ++eye) {
 			eyeOffsets[eye].x = eyeRenderDescs[eye].HmdToEyeViewOffset.x;
@@ -279,22 +292,29 @@ public class OVRContext implements HMDRenderContext {
 	}
 
 	private static final int RIFT_MONITOR = 0;
-	private static final int RIFT_DK2_WIDTH = 1920;
-	private static final int RIFT_DK2_HEIGHT = 1080;
-	
+
 	@Override
 	public long getPreferredMonitor() {
-		return findRift(RIFT_DK2_WIDTH, RIFT_DK2_HEIGHT);
+		if (LWJGLUtil.getPlatform() == LWJGLUtil.Platform.LINUX) {
+		return findRift(hmd.Resolution.h, hmd.Resolution.w);
+		}
+		return findRift(hmd.Resolution.w, hmd.Resolution.h);
 	}
 
 	@Override
 	public int getPreferredWidth() {
-		return RIFT_DK2_WIDTH;
+		if (LWJGLUtil.getPlatform() == LWJGLUtil.Platform.LINUX) {
+			return hmd.Resolution.h;
+		}
+		return hmd.Resolution.w;
 	}
 
 	@Override
 	public int getPreferredHeight() {
-		return RIFT_DK2_HEIGHT;
+		if (LWJGLUtil.getPlatform() == LWJGLUtil.Platform.LINUX) {
+			return hmd.Resolution.w;
+		}
+		return hmd.Resolution.h;
 	}
 	
 	public static long findRift(int riftWidth, int riftHeight) {
