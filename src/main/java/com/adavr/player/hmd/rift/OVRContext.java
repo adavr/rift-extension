@@ -69,6 +69,8 @@ import org.lwjgl.opengl.GL30;
 import org.saintandreas.math.Matrix4f;
 import org.saintandreas.math.Quaternion;
 import org.saintandreas.math.Vector3f;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -90,7 +92,9 @@ public class OVRContext implements HMDRenderContext {
 	private final Framebuffer[] framebuffers = new Framebuffer[ovrEye_Count];
 
 	private boolean trackingEnabled = true;
-	private LinkedList<HMDStatusListener> listeners = new LinkedList<>();
+	private final LinkedList<HMDStatusListener> listeners = new LinkedList<>();
+	
+	private static final Logger logger = LoggerFactory.getLogger(OVRContext.class);
 
 	public OVRContext(Hmd hmd, SceneRenderContext ctx) {
 		this.hmd = hmd;
@@ -133,16 +137,16 @@ public class OVRContext implements HMDRenderContext {
 
 	private void initHMD() {
 		OvrSizei resolution = hmd.Resolution;
-		System.out.println("resolution= " + resolution.w + "x" + resolution.h);
+		logger.debug("resolution= " + resolution.w + "x" + resolution.h);
 
 		OvrSizei recommendedTex0Size = hmd.getFovTextureSize(ovrEye_Left, hmd.DefaultEyeFov[ovrEye_Left], 1.0f);
 		OvrSizei recommendedTex1Size = hmd.getFovTextureSize(ovrEye_Right, hmd.DefaultEyeFov[ovrEye_Right], 1.0f);
-		System.out.println("left= " + recommendedTex0Size.w + "x" + recommendedTex0Size.h);
-		System.out.println("right= " + recommendedTex1Size.w + "x" + recommendedTex1Size.h);
+		logger.debug("left= " + recommendedTex0Size.w + "x" + recommendedTex0Size.h);
+		logger.debug("right= " + recommendedTex1Size.w + "x" + recommendedTex1Size.h);
 		int displayW = recommendedTex0Size.w + recommendedTex1Size.w;
 		int displayH = Math.max(recommendedTex0Size.h, recommendedTex1Size.h);
 		OvrSizei renderTargetEyeSize = new OvrSizei(displayW / 2, displayH);    //single eye
-		System.out.println("using eye size " + renderTargetEyeSize.w + "x" + renderTargetEyeSize.h);
+		logger.debug("using eye size " + renderTargetEyeSize.w + "x" + renderTargetEyeSize.h);
 
 		eyeRenderViewport[ovrEye_Left].Pos = new OvrVector2i(0, 0);
 		eyeRenderViewport[ovrEye_Left].Size = renderTargetEyeSize;
@@ -170,7 +174,7 @@ public class OVRContext implements HMDRenderContext {
 		scene = player.invert();
 		resetCamera();
 
-		System.out.println("eyeheight=" + eyeHeight + " ipd=" + ipd);
+		logger.debug("eyeheight=" + eyeHeight + " ipd=" + ipd);
 	}
 
 	private void setupFramebuffer(int eyeIndex) {
@@ -323,23 +327,23 @@ public class OVRContext implements HMDRenderContext {
 		IntBuffer modeCount = BufferUtils.createIntBuffer(1);
 		for (int i = 0; i < monitors.limit(); i++) {
 			long monitorId = monitors.get(i);
-			System.out.println("monitor: " + monitorId);
+			logger.debug("monitor: " + monitorId);
 			ByteBuffer modes = GLFW.glfwGetVideoModes(monitorId, modeCount);
-			System.out.println("mode count=" + modeCount.get(0));
+			logger.debug("mode count=" + modeCount.get(0));
 			for (int j = 0; j < modeCount.get(0); j++) {
 				modes.position(j * GLFWvidmode.SIZEOF);
 				int width = GLFWvidmode.width(modes);
 				int height = GLFWvidmode.height(modes);
 				// System.out.println(width + "," + height + "," + monitorId);
 				if (width == riftWidth && height == riftHeight) {
-					System.out.println("found dimensions match: " + width + "," + height + "," + monitorId);
+					logger.debug("found dimensions match: " + width + "," + height + "," + monitorId);
 					riftMonitorId = monitorId;
 					if (i == RIFT_MONITOR) {
 						return riftMonitorId;
 					}
 				}
 			}
-			System.out.println("-----------------");
+			logger.debug("-----------------");
 		}
 		return riftMonitorId;
 	}
