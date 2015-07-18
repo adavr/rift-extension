@@ -80,10 +80,10 @@ public class OVRContext implements HMDRenderContext {
 
 	private final Hmd hmd;
 	private final SceneRenderContext ctx;
-	private final OvrVector3f eyeOffsets[] = (OvrVector3f[]) new OvrVector3f().toArray(2);
-	private final OvrRecti[] eyeRenderViewport = (OvrRecti[]) new OvrRecti().toArray(2);
-	private final GLTexture eyeTextures[] = (GLTexture[]) new GLTexture().toArray(2);
-	private final FovPort fovPorts[] = (FovPort[]) new FovPort().toArray(2);
+	private final OvrVector3f eyeOffsets[] = (OvrVector3f[]) new OvrVector3f().toArray(ovrEye_Count);
+	private final OvrRecti[] eyeRenderViewport = (OvrRecti[]) new OvrRecti().toArray(ovrEye_Count);
+	private final GLTexture eyeTextures[] = (GLTexture[]) new GLTexture().toArray(ovrEye_Count);
+	private final FovPort fovPorts[] = (FovPort[]) new FovPort().toArray(ovrEye_Count);
 	private float ipd = OvrLibrary.OVR_DEFAULT_IPD;
 	private float eyeHeight = OvrLibrary.OVR_DEFAULT_EYE_HEIGHT;
 
@@ -139,29 +139,27 @@ public class OVRContext implements HMDRenderContext {
 		OvrSizei resolution = hmd.Resolution;
 		logger.debug("resolution= " + resolution.w + "x" + resolution.h);
 
-		OvrSizei recommendedTex0Size = hmd.getFovTextureSize(ovrEye_Left, hmd.DefaultEyeFov[ovrEye_Left], 1.0f);
-		OvrSizei recommendedTex1Size = hmd.getFovTextureSize(ovrEye_Right, hmd.DefaultEyeFov[ovrEye_Right], 1.0f);
-		logger.debug("left= " + recommendedTex0Size.w + "x" + recommendedTex0Size.h);
-		logger.debug("right= " + recommendedTex1Size.w + "x" + recommendedTex1Size.h);
-		int displayW = recommendedTex0Size.w + recommendedTex1Size.w;
-		int displayH = Math.max(recommendedTex0Size.h, recommendedTex1Size.h);
+		OvrSizei recommendedTexSize[] = new OvrSizei[ovrEye_Count];
+		for (int eye = 0; eye < ovrEye_Count; eye++) {
+			recommendedTexSize[eye] = hmd.getFovTextureSize(eye, hmd.DefaultEyeFov[eye], 1.0f);
+		}
+		logger.debug("left= " + recommendedTexSize[ovrEye_Left].w + "x" + recommendedTexSize[ovrEye_Left].h);
+		logger.debug("right= " + recommendedTexSize[ovrEye_Right].w + "x" + recommendedTexSize[ovrEye_Right].h);
+		int displayW = recommendedTexSize[ovrEye_Left].w + recommendedTexSize[ovrEye_Right].w;
+		int displayH = Math.max(recommendedTexSize[ovrEye_Left].h, recommendedTexSize[ovrEye_Right].h);
 		OvrSizei renderTargetEyeSize = new OvrSizei(displayW / 2, displayH);    //single eye
 		logger.debug("using eye size " + renderTargetEyeSize.w + "x" + renderTargetEyeSize.h);
 
-		eyeRenderViewport[ovrEye_Left].Pos = new OvrVector2i(0, 0);
-		eyeRenderViewport[ovrEye_Left].Size = renderTargetEyeSize;
-		eyeRenderViewport[ovrEye_Right].Pos = eyeRenderViewport[ovrEye_Left].Pos;
-		eyeRenderViewport[ovrEye_Right].Size = renderTargetEyeSize;
-
-		eyeTextures[ovrEye_Left].ogl = new GLTextureData(new TextureHeader(renderTargetEyeSize, eyeRenderViewport[ovrEye_Left]));
-		eyeTextures[ovrEye_Right].ogl = new GLTextureData(new TextureHeader(renderTargetEyeSize, eyeRenderViewport[ovrEye_Right]));
+		for (int eye = 0; eye < ovrEye_Count; eye++) {
+			eyeRenderViewport[eye].Pos = new OvrVector2i(0, 0);
+			eyeRenderViewport[eye].Size = renderTargetEyeSize;
+			eyeTextures[eye].ogl = new GLTextureData(
+					new TextureHeader(renderTargetEyeSize, eyeRenderViewport[eye]));
+			fovPorts[eye] = hmd.DefaultEyeFov[eye];
+		}
 
 		if (hmd.configureTracking(ovrTrackingCap_Orientation | ovrTrackingCap_MagYawCorrection, 0) == 0) {
 			throw new IllegalStateException("Unable to start the sensor");
-		}
-
-		for (int eye = 0; eye < ovrEye_Count; ++eye) {
-			fovPorts[eye] = hmd.DefaultEyeFov[eye];
 		}
 
 		ipd = hmd.getFloat(OvrLibrary.OVR_KEY_IPD, ipd);
