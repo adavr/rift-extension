@@ -95,6 +95,8 @@ public class OVRContext implements HMDRenderContext {
 	private final LinkedList<HMDStatusListener> listeners = new LinkedList<>();
 	
 	private static final Logger logger = LoggerFactory.getLogger(OVRContext.class);
+	
+	private static final boolean LINUX_DEV = (LWJGLUtil.getPlatform() == LWJGLUtil.Platform.LINUX);
 
 	public OVRContext(Hmd hmd, SceneRenderContext ctx) {
 		this.hmd = hmd;
@@ -201,7 +203,7 @@ public class OVRContext implements HMDRenderContext {
 
 		RenderAPIConfig rc = new RenderAPIConfig();
 		OvrSizei resolution = hmd.Resolution;
-		if (LWJGLUtil.getPlatform() == LWJGLUtil.Platform.LINUX) {
+		if (LINUX_DEV) {
 			rc.Header.BackBufferSize = new OvrSizei(resolution.h, resolution.w);
 		} else {
 			rc.Header.BackBufferSize = resolution;
@@ -211,7 +213,7 @@ public class OVRContext implements HMDRenderContext {
 				ovrDistortionCap_Chromatic |
 				ovrDistortionCap_TimeWarp |
 				ovrDistortionCap_Vignette;
-		if (LWJGLUtil.getPlatform() == LWJGLUtil.Platform.LINUX) {
+		if (LINUX_DEV) {
 			distortionCaps |= ovrDistortionCap_LinuxDevFullscreen;
 		}
 		EyeRenderDesc eyeRenderDescs[] = hmd.configureRendering(rc, distortionCaps, fovPorts);
@@ -297,7 +299,7 @@ public class OVRContext implements HMDRenderContext {
 
 	@Override
 	public long getPreferredMonitor() {
-		if (LWJGLUtil.getPlatform() == LWJGLUtil.Platform.LINUX) {
+		if (LINUX_DEV) {
 		return findRift(hmd.Resolution.h, hmd.Resolution.w);
 		}
 		return findRift(hmd.Resolution.w, hmd.Resolution.h);
@@ -305,7 +307,7 @@ public class OVRContext implements HMDRenderContext {
 
 	@Override
 	public int getPreferredWidth() {
-		if (LWJGLUtil.getPlatform() == LWJGLUtil.Platform.LINUX) {
+		if (LINUX_DEV) {
 			return hmd.Resolution.h;
 		}
 		return hmd.Resolution.w;
@@ -313,7 +315,7 @@ public class OVRContext implements HMDRenderContext {
 
 	@Override
 	public int getPreferredHeight() {
-		if (LWJGLUtil.getPlatform() == LWJGLUtil.Platform.LINUX) {
+		if (LINUX_DEV) {
 			return hmd.Resolution.w;
 		}
 		return hmd.Resolution.h;
